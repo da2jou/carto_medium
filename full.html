@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Carte Martin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js'></script>
+  <link href='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css' rel='stylesheet' />
+  <style>
+    body,
+    html {
+      margin: 0;
+      height: 100%;
+    }
+
+    #map {
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        "version": 8,
+        "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+
+        "sources": {
+          "osm": {
+            "type": "vector",
+            "tiles": ["http://localhost:3000/planet_osm_polygon/{z}/{x}/{y}"],
+            "minzoom": 0,
+            "maxzoom": 14
+          },
+          "line": {
+            "type": "vector",
+            "tiles": ["http://localhost:3000/planet_osm_line/{z}/{x}/{y}"],
+            "minzoom": 0,
+            "maxzoom": 14
+          },
+          "road": {
+            "type": "vector",
+            "tiles": ["http://localhost:3000/planet_osm_roads/{z}/{x}/{y}"],
+            "minzoom": 0,
+            "maxzoom": 14
+          },
+          "point": {
+            "type": "vector",
+            "tiles": ["http://localhost:3000/planet_osm_point/{z}/{x}/{y}"],
+            "minzoom": 0,
+            "maxzoom": 14
+          }
+        },
+        "layers": [
+          {
+            "id": "buildings-3d",
+            "type": "fill-extrusion",
+            "source": "osm",
+            "source-layer": "planet_osm_polygon",
+            "filter": ["has", "building"],
+            "minzoom": 15,
+            "paint": {
+              "fill-extrusion-color": [
+                "match",
+                ["get", "building"],
+                "residential", "#888",
+                "school", "#f80",
+                "church", "#b0c",
+                "yes", "#aaa",
+      /* default */ "#666"
+              ],
+              "fill-extrusion-height": [
+                "case",
+                ["has", "height"], ["to-number", ["get", "height"]],
+                ["has", "building:levels"], ["*", ["to-number", ["get", "building:levels"]], 3],
+                6
+              ],
+              "fill-extrusion-base": 0,
+              "fill-extrusion-opacity": 0.9
+            }
+          },
+
+
+          {
+            "id": "footways",
+            "type": "line",
+            "source": "line",
+            "source-layer": "planet_osm_line",
+            "filter": ["in", "highway", "footway", "path", "pedestrian"],
+            "minzoom": 13,
+            "paint": {
+              "line-color": "#888",
+              "line-width": [
+                "interpolate", ["linear"], ["zoom"],
+                13, 0.5,
+                18, 1.5
+              ],
+              "line-dasharray": [1, 1.5]
+            }
+          },
+
+
+          {
+            id: 'forest-colored',
+            type: 'fill',
+            source: 'osm',
+            "source-layer": 'planet_osm_polygon',
+            filter: ['has', 'landuse'],
+            paint: {
+              'fill-color': [
+                'match',
+                ['get', 'landuse'],
+                'forest', '#5DA661',
+                'school', '#f80',
+                'church', '#b0c',
+                'yes', '#aaa',
+      /* default */ '#eee'
+              ],
+              'fill-opacity': 0.7
+            }
+          },
+          {
+            "id": "green-areas",
+            "type": "fill",
+            "source": "osm",
+            "source-layer": "planet_osm_polygon",
+            "filter": [
+              "any",
+              ["==", "landuse", "grass"],
+              ["==", "leisure", "park"],
+              ["==", "natural", "grassland"],
+              ["==", "natural", "meadow"],
+              ["==", "landuse", "recreation_ground"]
+            ],
+            "minzoom": 10,
+            "paint": {
+              "fill-color": "#a8d08d",
+              "fill-opacity": 0.6
+            }
+          },
+
+
+          {
+            "id": "motorways",
+            "type": "line",
+            "source": "line",
+            "source-layer": "planet_osm_line",
+            "filter": ["in", "highway", "motorway", "trunk"],
+            "minzoom": 5,
+            "paint": {
+              "line-color": "#ff0000",
+              "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1, 15, 4]
+            }
+          },
+          {
+            "id": "primary",
+            "type": "line",
+            "source": "line",
+            "source-layer": "planet_osm_line",
+            "filter": ["in", "highway", "primary"],
+            "minzoom": 8,
+            "paint": {
+              "line-color": "#ffcc00",
+              "line-width": ["interpolate", ["linear"], ["zoom"],
+                5, 0.5,
+                10, 1.5,
+                15, 4,
+                17, 8,
+                18, 24
+              ]
+            }
+          },
+          {
+            "id": "secondary",
+            "type": "line",
+            "source": "line",
+            "source-layer": "planet_osm_line",
+            "filter": ["in", "highway", "secondary", "tertiary"],
+            "minzoom": 8,
+            "paint": {
+              "line-color": "#F5F093",
+              "line-width": ["interpolate", ["linear"], ["zoom"],
+                5, 0.5,
+                10, 1.5,
+                15, 3,
+                17, 6,
+                18, 18
+              ]
+            }
+          },
+          {
+            "id": "residential-roads",
+            "type": "line",
+            "source": "line",
+            "source-layer": "planet_osm_line",
+            "filter": ["in", "highway", "residential", "unclassified"],
+            "minzoom": 12,
+            "paint": {
+              "line-color": "#aaa",
+              "line-width": ["interpolate", ["linear"], ["zoom"], 12, 0.5, 18, 2]
+            }
+          },
+          {
+            "id": "tiny-roads",
+            "type": "line",
+            "source": "line",
+            "source-layer": "planet_osm_line",
+            "filter": ["in", "highway", "service", "living_street"],
+            "minzoom": 14,
+            "paint": {
+              "line-color": "#ddd",
+              "line-width": ["interpolate", ["linear"], ["zoom"], 14, 0.3, 18, 1.5]
+            }
+          },
+
+          {
+            "id": 'osm-points',
+            "type": 'circle',
+            "source": 'osm',
+            "source-layer": 'planet_osm_point',
+            "paint": {
+              'circle-radius': 3,
+              'circle-color': '#0f0'
+            }
+          },
+          {
+            "id": "water-polygons",
+            "type": "fill",
+            "source": "osm",
+            "source-layer": "planet_osm_polygon",
+            "filter": [
+              "any",
+              ["==", "natural", "water"],
+              ["==", "landuse", "reservoir"],
+              ["==", "waterway", "riverbank"]
+            ],
+            "minzoom": 5,
+            "paint": {
+              "fill-color": "#a0c8f0",
+              "fill-opacity": 1
+            }
+          },
+
+
+          {
+            "id": "city-labels",
+            "type": "symbol",
+            "source": "point",
+            "source-layer": "planet_osm_point",
+            "filter": ["in", "place", "city", "town", "village", "hamlet"],
+            "minzoom": 12,
+            "layout": {
+              "text-field": ["get", "name"],
+              "text-font": ["Noto Sans Regular"],
+              "text-size": [
+                "match",
+                ["get", "place"],
+                "city", 16,
+                "town", 14,
+                "village", 14,
+                "hamlet", 8,
+                12
+              ],
+              "text-anchor": "center",
+              "text-offset": [0, 0.6]
+            },
+            "paint": {
+              "text-color": "#333",
+              "text-halo-color": "#fff",
+              "text-halo-width": 1.2
+            }
+          },
+          {
+            "id": "street-labels",
+            "type": "symbol",
+            "source": "line",
+            "source-layer": "planet_osm_line",
+            "filter": [
+              "all",
+              ["has", "name"],
+              ["in", "highway", "residential", "primary", "secondary", "tertiary", "unclassified"]
+            ],
+            "minzoom": 14,
+            "layout": {
+              "symbol-placement": "line",
+              "text-field": ["get", "name"],
+              "text-font": ["Noto Sans Regular"],
+              "text-size": 10
+            },
+            "paint": {
+              "text-color": "#444",
+              "text-halo-color": "#fff",
+              "text-halo-width": 1
+            }
+          }
+
+
+        ]
+      },
+      center: [-1.68333, 48.083328], // Paris
+      zoom: 12
+    });
+  </script>
+</body>
+
+</html>

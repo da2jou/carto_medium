@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>OSM stylé</title>
+  <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    body, html { margin: 0; height: 100%; }
+    #map { height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      center: [-1.68333, 48.11], // Rennes
+      zoom: 13,
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: 'vector',
+            url: 'http://localhost:3000/planet_osm_polygon,planet_osm_line,planet_osm_point'
+          }
+        },
+        layers: [
+          // 1. Fond
+          { id: 'bg', type: 'background', paint: { 'background-color': '#eef1f2' } },
+
+          // 2. Eau
+          {
+            id: 'water', type: 'fill', source: 'osm', 'source-layer': 'planet_osm_polygon',
+            filter: ['==', 'natural', 'water'],
+            minzoom: 4,
+            paint: { 'fill-color': '#9fd3e8' }
+          },
+
+          // 3. Végétation
+          {
+            id: 'green', type: 'fill', source: 'osm', 'source-layer': 'planet_osm_polygon',
+            filter: ['any', ['==', 'leisure', 'park'], ['==', 'landuse', 'grass'], ['==', 'natural', 'wood']],
+            minzoom: 9,
+            paint: { 'fill-color': '#b9e0a5', 'fill-opacity': 0.9 }
+          },
+
+          // 4. Limites communales — gris léger, fines, discrètes
+          {
+            id: 'region-boundary', type: 'line', source: 'osm', 'source-layer': 'planet_osm_polygon',
+            filter: ['==', 'boundary', 'administrative'],
+            minzoom: 6,
+            paint: { 'line-color': '#b0b0b0', 'line-width': 1, 'line-dasharray': [3, 2] }
+          },
+
+          // 5. Bâtiments — n'apparaissent qu'au zoom rue
+          {
+            id: 'buildings', type: 'fill', source: 'osm', 'source-layer': 'planet_osm_polygon',
+            filter: ['has', 'building'], minzoom: 14,
+            paint: { 'fill-color': '#dcd6cc' }
+          },
+
+          // 6. Routes secondaires/résidentielles — discrètes, seulement de près
+          {
+            id: 'roads', type: 'line', source: 'osm', 'source-layer': 'planet_osm_line',
+            filter: ['all', ['has', 'highway'], ['!in', 'highway', 'motorway', 'trunk']],
+            minzoom: 12,
+            paint: {
+              'line-color': '#ffffff',
+              'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 18, 5]
+            }
+          },
+
+          // 7. Grands axes — orange vif, visibles de très loin (c'est le squelette de la carte)
+          {
+            id: 'motorways', type: 'line', source: 'osm', 'source-layer': 'planet_osm_line',
+            filter: ['in', 'highway', 'motorway', 'trunk'],
+            minzoom: 5,
+            paint: {
+              'line-color': '#ff9d42',
+              'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1, 15, 5]
+            }
+          },
+           {
+            "id": "city-labels",
+            "type": "symbol",
+            "source": "osm",
+            "source-layer": "planet_osm_point",
+            "filter": ["in", "place", "city", "town", "village", "hamlet"],
+            "minzoom": 12,
+            "layout": {
+              "text-field": ["get", "name"],
+              "text-font": ["Noto Sans Regular"],
+              "text-size": [
+                "match",
+                ["get", "place"],
+                "city", 16,
+                "town", 14,
+                "village", 14,
+                "hamlet", 8,
+                12
+              ],
+              "text-anchor": "center",
+              "text-offset": [0, 0.6]
+            },
+            "paint": {
+              "text-color": "#333",
+              "text-halo-color": "#fff",
+              "text-halo-width": 1.2
+            }
+          },
+          {
+            "id": "street-labels",
+            "type": "symbol",
+            "source": "osm",
+            "source-layer": "planet_osm_line",
+            "filter": [
+              "all",
+              ["has", "name"],
+              ["in", "highway", "residential", "primary", "secondary", "tertiary", "unclassified"]
+            ],
+            "minzoom": 14,
+            "layout": {
+              "symbol-placement": "line",
+              "text-field": ["get", "name"],
+              "text-font": ["Noto Sans Regular"],
+              "text-size": 10
+            },
+            "paint": {
+              "text-color": "#444",
+              "text-halo-color": "#fff",
+              "text-halo-width": 1
+            }
+          },
+        ]
+      }
+    });
+  </script>
+</body>
+</html>
